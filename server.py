@@ -50,14 +50,16 @@ CHAT_HTML = """
             display: flex;
             padding: 10px;
             background-color: #222;
+            gap: 10px;
         }
         .input-container input {
-            flex: 1;
             padding: 10px;
             background-color: #333;
             color: #00FF00;
             border: none;
             font-size: 16px;
+            border-radius: 8px;
+            width: 200%;
         }
         .input-container button {
             background-color: #00FF00;
@@ -66,6 +68,7 @@ CHAT_HTML = """
             padding: 10px;
             cursor: pointer;
             font-size: 16px;
+            border-radius: 8px;
         }
         .registration-container {
             position: fixed;
@@ -90,13 +93,66 @@ CHAT_HTML = """
             font-size: 16px;
             background-color: #333;
             color: #00FF00;
-            border: 1px solid #00FF00;
+            border: 0;
             margin-bottom: 10px;
-            width: 100%;
+            width: 70%;
+            border-radius: 8px;
+        }
+        .color-menu {
+            position: fixed;
+            top: 10px;
+            right: 10px; /* Переносим в правый верхний угол */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            background-color: #222;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid #000;
+            transition: transform 0.2s ease, border 0.2s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2) translateY(-5.0f);
+            border: 2px solid #FFF;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.6);
+        }
+
+        button {
+            background-color: #222;
+            color: #555;
+            border-radius: 8px;
+            border-width: 1;
+            cursor: pointer;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
+    <div class="color-menu">
+    <div class="color-option" style="background-color: #FF0000;" onclick="setColorCookie('#FF0000')"></div>
+    <div class="color-option" style="background-color: #00FF00;" onclick="setColorCookie('#00FF00')"></div>
+    <div class="color-option" style="background-color: #0000FF;" onclick="setColorCookie('#0000FF')"></div>
+    <div class="color-option" style="background-color: #FFFF00;" onclick="setColorCookie('#FFFF00')"></div>
+    <div class="color-option" style="background-color: #FF00FF;" onclick="setColorCookie('#FF00FF')"></div>
+    <div class="color-option" style="background-color: #00FFFF;" onclick="setColorCookie('#00FFFF')"></div>
+    <div class="color-option" style="background-color: #FFFFFF;" onclick="setColorCookie('#FFFFFF')"></div>
+    <div class="color-option" style="background-color: #C0C0C0;" onclick="setColorCookie('#C0C0C0')"></div>
+    <div class="color-option" style="background-color: #808080;" onclick="setColorCookie('#808080')"></div>
+    <div class="color-option" style="background-color: #4B0082;" onclick="setColorCookie('#4B0082')"></div>
+    <div class="color-option" style="background-color: #8B008B;" onclick="setColorCookie('#8B008B')"></div>
+    <div class="color-option" style="background-color: #008080;" onclick="setColorCookie('#008080')"></div>
+    <div class="color-option" style="background-color: #1e3a5f;" onclick="setColorCookie('#1e3a5f')"></div>
+    </div>
+
     <div class="registration-container" id="registration-container">
         <div class="registration-box">
             <input type="text" id="username" placeholder="Введите имя" maxlength="20">
@@ -145,25 +201,18 @@ CHAT_HTML = """
                 const chatHistory = document.getElementById('chat-history');
                 const message = JSON.parse(event.data);
                 const msgElement = document.createElement('div');
-                if (message.user == "HlebLegendarny"){
-                    msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: )${message.text})`;
-                    chatHistory.appendChild(msgElement);
-                    chatHistory.scrollTop = chatHistory.scrollHeight;
-                    return true
-                }
-                if (message.user == "YeRo"){
-                    msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>:[${message.text}]`;
-                    chatHistory.appendChild(msgElement);
-                    chatHistory.scrollTop = chatHistory.scrollHeight;
-                    return true
-                }
-                msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: ${message.text}`;
+
+                const messageColor = message.color || '#00FF00';
+
+                if (message.user == "HlebLegendarny"){message.text=`)${message.text})`}
+                if (message.user == "YeRo"){message.text=`[${message.text}]`}
+
+                msgElement.innerHTML = `<span style="color: ${messageColor}"><b>&lt;${message.user} at ${message.time}&gt;</b>: ${message.text}</span>`;
                 chatHistory.appendChild(msgElement);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             };
 
             socket.onopen = () => {
-                console.log('WebSocket подключён');
                 document.getElementById('registration-container').style.display = 'none';
             };
 
@@ -178,9 +227,10 @@ CHAT_HTML = """
         function sendMessage() {
             const messageInput = document.getElementById('message');
             const message = messageInput.value.trim();
+            const color = getCookie('color') || "#00FF00";
             if (message && socket && socket.readyState === WebSocket.OPEN) {
                 const username = getCookie('username');
-                socket.send(JSON.stringify({ user: username, text: message }));
+                socket.send(JSON.stringify({ user: username, text: message, color: color }));
                 messageInput.value = '';
             }
         }
@@ -194,6 +244,15 @@ CHAT_HTML = """
         document.querySelector('button').addEventListener('click', sendMessage);
 
         window.onload = connectWebSocket;
+
+        function setColorCookie(color){
+            const username = getCookie('username');
+            if(!username){
+                document.getElementById('registration-container').style.display = 'flex';
+                return false;
+            }
+            document.cookie = `color=${color}; path=/; max-age=3600`;
+        }
     </script>
 </body>
 </html>
@@ -203,23 +262,27 @@ CHAT_HTML = """
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    print("Новое WebSocket подключение установлено")
     active_connections.append(ws)
     for message in chat_history:
+        if 'color' not in message:
+            message['color'] = '#00FF00'
         await ws.send_str(json.dumps(message))
-
     try:
         async for msg in ws:
-            print(f"Получено сообщение: {msg.data}")
             if msg.type == WSMsgType.TEXT:
                 data = json.loads(msg.data)
                 current_time = time.strftime("%H:%M:%S", time.localtime())
                 message = {
                     'user': data['user'],
                     'time': current_time,
-                    'text': data['text']
+                    'text': data['text'],
+                    'color': data.get('color', '#00FF00')
                 }
                 chat_history.append(message)
+
+                with open("history.json", "w") as history:
+                    json.dump(chat_history, history)
+
                 if len(chat_history) > 65535:
                     chat_history.pop(0)
                 # Рассылка сообщения всем подключённым клиентам
@@ -230,9 +293,6 @@ async def websocket_handler(request):
     except Exception as e:
         print(f"Ошибка WebSocket: {e}")
     finally:
-        with open("history.json", "w") as history:
-            json.dump(chat_history, history)
-            history.close()
         active_connections.remove(ws)
 
     return ws
