@@ -145,6 +145,12 @@ CHAT_HTML = """
                 const chatHistory = document.getElementById('chat-history');
                 const message = JSON.parse(event.data);
                 const msgElement = document.createElement('div');
+                if (message.user == "HlebLegendarny"){
+                    msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: )${message.text})`;
+                    chatHistory.appendChild(msgElement);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                    return true
+                }
                 msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: ${message.text}`;
                 chatHistory.appendChild(msgElement);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
