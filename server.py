@@ -311,7 +311,7 @@ async def websocket_handler(request):
 # Главная страница с чатом
 async def index(request):
     return web.Response(text=CHAT_HTML, content_type='text/html')
-
+# lolo
 # Инициализация сервера
 async def init():
     app = web.Application()
