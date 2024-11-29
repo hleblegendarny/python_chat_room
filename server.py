@@ -4,6 +4,10 @@ from aiohttp import web, WSMsgType
 import time
 import json
 import os
+import ssl
+
+ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+ssl_context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
 
 # Хранение сообщений чата
 if os.path.exists("history.json"):
@@ -135,7 +139,7 @@ CHAT_HTML = """
                 return;
             }
 
-            socket = new WebSocket(`ws://${window.location.host}/ws`);
+            socket = new WebSocket(`wss://${window.location.host}/ws`);
 
             socket.onmessage = (event) => {
                 const chatHistory = document.getElementById('chat-history');
@@ -226,4 +230,4 @@ async def init():
     ])
     return app
 
-web.run_app(init(), host='localhost', port=6969)
+web.run_app(init(), host='localhost', port=6969, ssl_context=ssl_context)
