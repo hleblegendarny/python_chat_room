@@ -1,23 +1,34 @@
 import aiohttp
 import asyncio
-from aiohttp import web
+from aiohttp import web, WSMsgType
 import time
 import json
 import os
 
-# HTML-шаблон для чата с регистрацией через куки
+# Хранение сообщений чата
+if os.path.exists("history.json"):
+    with open("history.json", "r") as history:
+        chat_history = json.load(history)
+else:
+    chat_history = []
+
+# Хранение WebSocket-соединений
+active_connections = []
+
+# HTML-шаблон чата (без изменений)
 CHAT_HTML = """
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap" rel="stylesheet">
     <title>Чат</title>
     <style>
         body {
             background-color: black;
             color: #00FF00;
-            font-family: 'Courier New', monospace;
+            font-family: 'IBM Plex Mono', monospace;
             margin: 0;
             padding: 0;
         }
@@ -98,14 +109,12 @@ CHAT_HTML = """
     </div>
 
     <script>
+        let socket;
+
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        if (!getCookie('username')) {
-            document.getElementById('registration-container').style.display = 'flex';
         }
 
         function registerUser() {
@@ -113,92 +122,96 @@ CHAT_HTML = """
             if (username) {
                 document.cookie = `username=${username}; path=/; max-age=3600`;
                 document.getElementById('registration-container').style.display = 'none';
-                location.reload();
+                connectWebSocket();
             } else {
                 alert('Введите имя пользователя.');
             }
         }
 
-        function updateChat() {
-            fetch('/messages')
-                .then(response => response.json())
-                .then(data => {
-                    const chatHistory = document.getElementById('chat-history');
-                    chatHistory.innerHTML = '';
-                    data.messages.forEach(message => {
-                        const msgElement = document.createElement('div');
-                        msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: ${message.text}`;
-                        chatHistory.appendChild(msgElement);
-                    });
-                    chatHistory.scrollTop = chatHistory.scrollHeight;
-                });
+        function connectWebSocket() {
+            const username = getCookie('username');
+            if (!username) {
+                document.getElementById('registration-container').style.display = 'flex';
+                return;
+            }
+
+            socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+            socket.onmessage = (event) => {
+                const chatHistory = document.getElementById('chat-history');
+                const message = JSON.parse(event.data);
+                const msgElement = document.createElement('div');
+                msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: ${message.text}`;
+                chatHistory.appendChild(msgElement);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            };
+
+            socket.onopen = () => {
+                document.getElementById('registration-container').style.display = 'none';
+            };
+
+            socket.onclose = () => {
+                console.error('WebSocket закрыт, переподключение...');
+                setTimeout(connectWebSocket, 1000);
+            };
         }
 
         function sendMessage() {
             const messageInput = document.getElementById('message');
             const message = messageInput.value.trim();
-            if (message) {
-                const user = getCookie('username');
-                fetch(`/send?username=${encodeURIComponent(user)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                }).then(() => {
-                    messageInput.value = '';
-                    updateChat();
-                });
+            if (message && socket && socket.readyState === WebSocket.OPEN) {
+                const username = getCookie('username');
+                socket.send(JSON.stringify({ user: username, text: message }));
+                messageInput.value = '';
             }
         }
 
-        window.onload = function () {
-                    const username = getCookie('username');
-                    if (!username) {
-                        document.getElementById('registration-container').style.display = 'flex';
-                    } else {
-                        document.getElementById('registration-container').style.display = 'none';
-                        updateChat();
-                    }
-                };
+        window.onload = connectWebSocket;
     </script>
 </body>
 </html>
 """
 
-# Хранение сообщений чата
-if os.path.exists("history.json"):
-    with open("history.json", "r") as history:
-        chat_history = json.load(history)
-else:
-    chat_history = []
+# Обработчик WebSocket-соединения
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    active_connections.append(ws)
 
-# Обработчик для получения истории сообщений
-async def get_messages(request):
-    return web.json_response({'messages': chat_history})
+    try:
+        async for msg in ws:
+            if msg.type == WSMsgType.TEXT:
+                data = json.loads(msg.data)
+                current_time = time.strftime("%H:%M:%S", time.localtime())
+                message = {
+                    'user': data['user'],
+                    'time': current_time,
+                    'text': data['text']
+                }
+                chat_history.append(message)
+                if len(chat_history) > 1000:
+                    chat_history.pop(0)
+                # Рассылка сообщения всем подключённым клиентам
+                for conn in active_connections:
+                    await conn.send_json(message)
+            elif msg.type == WSMsgType.ERROR:
+                print(f'Ошибка WebSocket: {ws.exception()}')
+    finally:
+        active_connections.remove(ws)
 
-# Обработчик для отправки сообщений
-async def send_message(request):
-    data = await request.json()
-    message = data.get('message')
-    if message:
-        current_time = time.strftime("%H:%M:%S", time.localtime())
-        user = request.query.get('username', 'Пользователь')
-        chat_history.append({'user': user, 'time': current_time, 'text': message})
-        if len(chat_history) > 1000:
-            chat_history.pop(0)
-        return web.Response(status=200)
-    return web.Response(status=400)
+    return ws
 
 # Главная страница с чатом
 async def index(request):
     return web.Response(text=CHAT_HTML, content_type='text/html')
 
-# Запуск сервера
+# Инициализация сервера
 async def init():
     app = web.Application()
-    app.add_routes([web.get('/', index), web.get('/messages', get_messages), web.post('/send', send_message)])
+    app.add_routes([
+        web.get('/', index),
+        web.get('/ws', websocket_handler)
+    ])
     return app
 
 web.run_app(init(), host='localhost', port=6969)
-
-with open("history.json", "w") as history:
-    json.dump(chat_history, history, indent=4)
