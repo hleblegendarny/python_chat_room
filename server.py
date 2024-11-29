@@ -44,7 +44,8 @@ CHAT_HTML = """
         .chat-history {
             flex: 1;
             padding: 10px;
-            overflow-y: auto;
+            overflow-y: scroll;
+            overflow-x: hidden;
         }
         .input-container {
             display: flex;
@@ -53,6 +54,7 @@ CHAT_HTML = """
             gap: 10px;
         }
         .input-container input {
+            flex: 1;
             padding: 10px;
             background-color: #333;
             color: #00FF00;
