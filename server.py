@@ -172,6 +172,14 @@ CHAT_HTML = """
                 messageInput.value = '';
             }
         }
+        document.getElementById('message').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Обработчик для нажатия кнопки отправки
+        document.querySelector('button').addEventListener('click', sendMessage);
 
         window.onload = connectWebSocket;
     </script>
