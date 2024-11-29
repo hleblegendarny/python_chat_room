@@ -164,7 +164,7 @@ CHAT_HTML = """
     <div class="chat-container">
         <div class="chat-history" id="chat-history"></div>
         <div class="input-container">
-            <input type="text" id="message" placeholder="Напишите сообщение...">
+            <input type="text" id="message" style="color: #FFFFFF;" placeholder="Напишите сообщение...">
             <button onclick="sendMessage()">Отправить</button>
         </div>
     </div>
@@ -193,16 +193,10 @@ CHAT_HTML = """
             if (username) {
                 document.cookie = `username=${username}; path=/; max-age=3600`;
                 document.getElementById('registration-container').style.display = 'none';
-                setInputColor();
                 connectWebSocket();
             } else {
                 alert('Введите имя пользователя.');
             }
-        }
-
-        function setInputColor() {
-            const color = getCookie('color') || '#00FF00';  // Если цвет не установлен, по умолчанию #00FF00
-            document.getElementById('message').style.color = color;  // Применяем цвет к полю ввода
         }
 
         function connectWebSocket() {
@@ -211,7 +205,6 @@ CHAT_HTML = """
                 document.getElementById('registration-container').style.display = 'flex';
                 return;
             }
-            setInputColor();
             socket = new WebSocket(`wss://${window.location.host}/ws`);
 
             socket.onmessage = (event) => {
@@ -269,7 +262,6 @@ CHAT_HTML = """
                 return false;
             }
             document.cookie = `color=${color}; path=/; max-age=3600`;
-            setInputColor();
         }
     </script>
 </body>
