@@ -147,6 +147,7 @@ CHAT_HTML = """
             };
 
             socket.onopen = () => {
+                console.log('WebSocket подключён');
                 document.getElementById('registration-container').style.display = 'none';
             };
 
@@ -154,6 +155,8 @@ CHAT_HTML = """
                 console.error('WebSocket закрыт, переподключение...');
                 setTimeout(connectWebSocket, 1000);
             };
+            socket.onerror = (error) => console.error('WebSocket ошибка:', error);
+
         }
 
         function sendMessage() {
@@ -176,10 +179,14 @@ CHAT_HTML = """
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    print("Новое WebSocket подключение установлено")
     active_connections.append(ws)
+    for message in chat_history:
+        await ws.send_str(json.dumps(message))
 
     try:
         async for msg in ws:
+            print(f"Получено сообщение: {msg.data}")
             if msg.type == WSMsgType.TEXT:
                 data = json.loads(msg.data)
                 current_time = time.strftime("%H:%M:%S", time.localtime())
@@ -196,7 +203,12 @@ async def websocket_handler(request):
                     await conn.send_json(message)
             elif msg.type == WSMsgType.ERROR:
                 print(f'Ошибка WebSocket: {ws.exception()}')
+    except Exception as e:
+        print(f"Ошибка WebSocket: {e}")
     finally:
+        with open("history.json", "w") as history:
+            json.dump(chat_history, history)
+            history.close()
         active_connections.remove(ws)
 
     return ws
