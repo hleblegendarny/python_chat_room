@@ -39,7 +39,7 @@ CHAT_HTML = """
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 90vh;
+            height: 100vh;
         }
         .chat-history {
             flex: 1;
@@ -137,7 +137,8 @@ CHAT_HTML = """
     </style>
 </head>
 <body>
-    <div class="color-menu">
+    <div class="color-menu" id="color-menu">
+    <button onclick="toggleColorMenu()" style="background-color: #333; color: #00FF00; border-radius: 8px; border: none; padding: 10px; cursor: pointer;">Скрыть меню</button>
     <div class="color-option" style="background-color: #FF0000;" onclick="setColorCookie('#FF0000')"></div>
     <div class="color-option" style="background-color: #00FF00;" onclick="setColorCookie('#00FF00')"></div>
     <div class="color-option" style="background-color: #0000FF;" onclick="setColorCookie('#0000FF')"></div>
@@ -171,6 +172,16 @@ CHAT_HTML = """
     <script>
         let socket;
 
+        function toggleColorMenu() {
+            const colorMenu = document.getElementById('color-menu');
+            // Переключаем видимость меню
+            if (colorMenu.style.display === 'none') {
+                colorMenu.style.display = 'flex';  // Показываем меню
+            } else {
+                colorMenu.style.display = 'none';  // Скрываем меню
+            }
+        }
+
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -182,10 +193,16 @@ CHAT_HTML = """
             if (username) {
                 document.cookie = `username=${username}; path=/; max-age=3600`;
                 document.getElementById('registration-container').style.display = 'none';
+                setInputColor();
                 connectWebSocket();
             } else {
                 alert('Введите имя пользователя.');
             }
+        }
+
+        function setInputColor() {
+            const color = getCookie('color') || '#00FF00';  // Если цвет не установлен, по умолчанию #00FF00
+            document.getElementById('message').style.color = color;  // Применяем цвет к полю ввода
         }
 
         function connectWebSocket() {
@@ -194,7 +211,7 @@ CHAT_HTML = """
                 document.getElementById('registration-container').style.display = 'flex';
                 return;
             }
-
+            setInputColor();
             socket = new WebSocket(`wss://${window.location.host}/ws`);
 
             socket.onmessage = (event) => {
@@ -252,6 +269,7 @@ CHAT_HTML = """
                 return false;
             }
             document.cookie = `color=${color}; path=/; max-age=3600`;
+            setInputColor();
         }
     </script>
 </body>
