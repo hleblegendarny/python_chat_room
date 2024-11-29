@@ -35,9 +35,6 @@ CHAT_HTML = """
             font-family: 'IBM Plex Mono', monospace;
             margin: 0;
             padding: 0;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            word-break: break-word;
         }
         .chat-container {
             display: flex;
@@ -48,7 +45,6 @@ CHAT_HTML = """
             flex: 1;
             padding: 10px;
             overflow-y: auto;
-            overflow-x: hidden;
         }
         .input-container {
             display: flex;
@@ -63,7 +59,6 @@ CHAT_HTML = """
             border: none;
             font-size: 16px;
             border-radius: 8px;
-            width: 200%;
         }
         .input-container button {
             background-color: #00FF00;
