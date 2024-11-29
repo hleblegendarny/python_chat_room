@@ -151,6 +151,12 @@ CHAT_HTML = """
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                     return true
                 }
+                if (message.user == "YeRo"){
+                    msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>:[${message.text}]`;
+                    chatHistory.appendChild(msgElement);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                    return true
+                }
                 msgElement.innerHTML = `<b>&lt;${message.user} at ${message.time}&gt;</b>: ${message.text}`;
                 chatHistory.appendChild(msgElement);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
