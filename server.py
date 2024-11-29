@@ -35,7 +35,9 @@ CHAT_HTML = """
             font-family: 'IBM Plex Mono', monospace;
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
         .chat-container {
             display: flex;
@@ -46,6 +48,7 @@ CHAT_HTML = """
             flex: 1;
             padding: 10px;
             overflow-y: auto;
+            overflow-x: hidden;
         }
         .input-container {
             display: flex;
