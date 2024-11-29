@@ -183,16 +183,10 @@ CHAT_HTML = """
             }
         }
 
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
         function registerUser() {
             const username = document.getElementById('username').value.trim();
             if (username) {
-                document.cookie = `username=${username}; path=/; max-age=3600`;
+                localStorage.setItem('username', username)
                 document.getElementById('registration-container').style.display = 'none';
                 connectWebSocket();
             } else {
@@ -201,8 +195,7 @@ CHAT_HTML = """
         }
 
         function connectWebSocket() {
-            const username = getCookie('username');
-            if (!username) {
+            if (!localStorage.getItem('username')) {
                 document.getElementById('registration-container').style.display = 'flex';
                 return;
             }
@@ -238,17 +231,15 @@ CHAT_HTML = """
         function sendMessage() {
             const messageInput = document.getElementById('message');
             const message = messageInput.value.trim();
-            const color = getCookie('color') || "#00FF00";
-            if (message && socket && socket.readyState === WebSocket.OPEN) {
-                const username = getCookie('username');
+            const color = localStorage.getItem('color') || "#00FF00";
+            const username = localStorage.getItem('username');
+            if (message && socket && socket.readyState === WebSocket.OPEN && username) {
                 socket.send(JSON.stringify({ user: username, text: message, color: color }));
                 messageInput.value = '';
             }
         }
         document.getElementById('message').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
+            if (event.key === 'Enter') {sendMessage();}
         });
 
         // Обработчик для нажатия кнопки отправки
@@ -257,12 +248,12 @@ CHAT_HTML = """
         window.onload = connectWebSocket;
 
         function setColorCookie(color){
-            const username = getCookie('username');
+            const username = localStorage.getItem('username');
             if(!username){
                 document.getElementById('registration-container').style.display = 'flex';
                 return false;
             }
-            document.cookie = `color=${color}; path=/; max-age=3600`;
+            localStorage.setItem('color', color)
         }
     </script>
 </body>
