@@ -214,7 +214,7 @@ async def websocket_handler(request):
                     'text': data['text']
                 }
                 chat_history.append(message)
-                if len(chat_history) > 1000:
+                if len(chat_history) > 65535:
                     chat_history.pop(0)
                 # Рассылка сообщения всем подключённым клиентам
                 for conn in active_connections:
