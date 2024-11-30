@@ -293,12 +293,9 @@ async def websocket_handler(request):
     await ws.prepare(request)
     active_connections.append(ws)
 
-    cleaner = Cleaner(tags=[], attributes={}, styles=[], protocols=[])
-
     for message in chat_history:
         if 'color' not in message:
             message['color'] = '#00FF00'
-        message['text'] = cleaner.clean(message['text'])
         message['text'] = escape(message['text'])
         await ws.send_str(json.dumps(message))
     try:
