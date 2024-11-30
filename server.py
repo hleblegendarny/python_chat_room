@@ -296,7 +296,7 @@ async def websocket_handler(request):
     for message in chat_history:
         if 'color' not in message:
             message['color'] = '#00FF00'
-        message['text'] = escape(message['text'])
+        #message['text'] = escape(message['text'])
         await ws.send_str(json.dumps(message))
     try:
         async for msg in ws:
