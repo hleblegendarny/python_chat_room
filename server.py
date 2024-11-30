@@ -1,3 +1,4 @@
+import re
 import aiohttp
 import asyncio
 from aiohttp import web, WSMsgType
@@ -273,6 +274,7 @@ CHAT_HTML = """
 """
 
 # Обработчик WebSocket-соединения
+
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -285,11 +287,18 @@ async def websocket_handler(request):
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
                 data = json.loads(msg.data)
+                # Удаление нежелательного HTML-кода
+                sanitized_text = re.sub(
+                    r'<div[^>]*id=["\']color-menu-new["\'][^>]*>.*?</div>', 
+                    '', 
+                    data['text'], 
+                    flags=re.DOTALL
+                )
                 current_time = time.strftime("%H:%M:%S", time.localtime())
                 message = {
                     'user': data['user'],
                     'time': current_time,
-                    'text': data['text'],
+                    'text': sanitized_text,
                     'color': data.get('color', '#00FF00')
                 }
                 chat_history.append(message)
@@ -310,6 +319,7 @@ async def websocket_handler(request):
         active_connections.remove(ws)
 
     return ws
+
 
 # Главная страница с чатом
 async def index(request):
