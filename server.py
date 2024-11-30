@@ -308,7 +308,7 @@ async def websocket_handler(request):
                 message = {
                     'user': data['user'],
                     'time': current_time,
-                    'text': sanitized_text,
+                    'text': data['text'],
                     'color': data.get('color', '#00FF00')
                 }
                 chat_history.append(message)
