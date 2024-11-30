@@ -8,7 +8,7 @@ import os
 import ssl
 import bleach
 from bleach.sanitizer import Cleaner
-
+from html import escape
 
 ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 ssl_context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
@@ -272,6 +272,16 @@ CHAT_HTML = """
             localStorage.setItem('color', color)
         }
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const extraMenu = document.getElementById('color-menu-new');
+            if (extraMenu) {
+                extraMenu.remove();
+                console.log("Второе меню удалено.");
+            }
+        });
+    </script>
+
 </body>
 </html>
 """
@@ -282,17 +292,20 @@ async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     active_connections.append(ws)
+
+    cleaner = Cleaner(tags=[], attributes={}, styles=[], protocols=[])
+
     for message in chat_history:
         if 'color' not in message:
             message['color'] = '#00FF00'
+        message['text'] = cleaner.clean(message['text'])
+        message['text'] = escape(message['text'])
         await ws.send_str(json.dumps(message))
     try:
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
                 data = json.loads(msg.data)
 
-                cleaner = Cleaner(tags=[], attributes={}, styles=[], protocols=[])
-                sanitized_text = cleaner.clean(data['text'])
                 
                 current_time = time.strftime("%H:%M:%S", time.localtime())
                 message = {
