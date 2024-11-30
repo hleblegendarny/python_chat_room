@@ -6,6 +6,9 @@ import time
 import json
 import os
 import ssl
+import bleach
+from bleach.sanitizer import Cleaner
+
 
 ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 ssl_context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
@@ -287,13 +290,10 @@ async def websocket_handler(request):
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
                 data = json.loads(msg.data)
-                # Удаление нежелательного HTML-кода
-                sanitized_text = re.sub(
-                    r'<div[^>]*id=["\']color-menu-new["\'][^>]*>.*?</div>', 
-                    '', 
-                    data['text'], 
-                    flags=re.DOTALL
-                )
+
+                cleaner = Cleaner(tags=[], attributes={}, styles=[], protocols=[])
+                sanitized_text = cleaner.clean(data['text'])
+                
                 current_time = time.strftime("%H:%M:%S", time.localtime())
                 message = {
                     'user': data['user'],
