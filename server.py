@@ -247,6 +247,18 @@ CHAT_HTML = """
 
         window.onload = connectWebSocket;
 
+        document.addEventListener('DOMContentLoaded', () => {
+            const extraMenu = document.getElementById('color-menu-new');
+            if (extraMenu) {
+                extraMenu.remove();
+                console.log("Второе меню удалено.");
+            }
+        });
+
+        window.alert = function() {
+            console.log("Блокировка alert: вызов был проигнорирован.");
+        };
+
         function setColorCookie(color){
             const username = localStorage.getItem('username');
             if(!username){
